@@ -45,11 +45,29 @@ if ($resp -is [string]) {
     $resp = $json | ConvertFrom-Json
 }
 $text = (($resp.result.content | Where-Object { $_.type -eq 'text' } | ForEach-Object { $_.text }) -join '').Trim()
-if ($resp.result.isError -or $resp.error) { throw "FinHQ says: $text" }
+if (-not $text -and $resp.error) { $text = "$($resp.error.message)".Trim() }
+if ($resp.result.isError -or $resp.error) {
+    if (-not $text) { $text = "the model for '$ticker' is not available." }
+    throw "FinHQ says: $text"
+}
 $match = [regex]::Match($text, 'https://\S*api/model/xlsx\S*')
-if (-not $match.Success) { throw "No download link returned. FinHQ says: $text" }
+if (-not $match.Success) {
+    if (-not $text) { $text = "no model is available for '$ticker'." }
+    throw "No download link returned. FinHQ says: $text"
+}
 $url = $match.Value
 try { Invoke-WebRequest -Uri $url -OutFile $outPath -UseBasicParsing }
-catch { throw "Download failed (the link may have expired -- links last ~30 min; just run again). $_" }
+catch {
+    $code = $null
+    try { $code = [int]$_.Exception.Response.StatusCode } catch {}
+    if ($code -eq 404) {
+        throw "The model file wasn't found (HTTP 404) -- '$ticker' may not have an available model yet."
+    } elseif ($code -eq 403 -or $code -eq 410) {
+        throw "The download link expired (HTTP $code) -- links last ~30 min. Just run again."
+    } else {
+        $extra = if ($code) { " (HTTP $code)" } else { '' }
+        throw "Download failed$extra. $($_.Exception.Message)"
+    }
+}
 Write-Host ''
 Write-Host "Saved: $outPath"
