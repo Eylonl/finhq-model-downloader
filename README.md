@@ -18,6 +18,15 @@ link, and downloads it.
    save it as a per-user Windows environment variable (`FINHQ_TOKEN`) so you're
    not asked again. It's stored in your Windows user profile (the registry under
    `HKCU\Environment`), not in any file in this folder.
+
+   Or set it yourself once in PowerShell (User scope = persists across sessions
+   and reboots), then just run the tool:
+
+   ```powershell
+   [Environment]::SetEnvironmentVariable('FINHQ_TOKEN', 'fhq_xxxx', 'User')
+   ```
+
+   Open a new PowerShell window afterward so the variable is picked up.
 3. Requirements: Windows PowerShell 5.1 (built into Windows 10/11). Nothing to install.
 
 ## Security
