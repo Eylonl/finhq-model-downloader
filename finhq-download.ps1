@@ -2,10 +2,10 @@
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $BaseUrl   = if ($env:FINHQ_BASE_URL) { $env:FINHQ_BASE_URL.TrimEnd('/') } else { 'https://finhq.ai' }
-$TokenFile = Join-Path $HOME '.finhq_token'
 function Get-FinhqToken {
     if ($env:FINHQ_TOKEN) { return $env:FINHQ_TOKEN.Trim() }
-    if (Test-Path $TokenFile) { return ((Get-Content -Raw $TokenFile).Trim()) }
+    $stored = [Environment]::GetEnvironmentVariable('FINHQ_TOKEN', 'User')
+    if ($stored) { return $stored.Trim() }
     Write-Host "Enter your FinHQ token (starts with fhq_  --  from the FinHQ app > MCP/Connect):"
     $sec  = Read-Host -Prompt 'Token' -AsSecureString
     $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
@@ -13,10 +13,12 @@ function Get-FinhqToken {
     finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
     $tok = $tok.Trim()
     if (-not $tok) { throw 'No token entered.' }
-    $save = Read-Host "Save this token to $TokenFile so you aren't asked again? [y/N]"
+    $save = Read-Host "Save this token as a Windows environment variable (FINHQ_TOKEN) so you aren't asked again? [y/N]"
     if ($save -match '^[Yy]') {
-        Set-Content -Path $TokenFile -Value $tok -NoNewline
-        Write-Host "Saved. (Delete $TokenFile to remove it.)"
+        [Environment]::SetEnvironmentVariable('FINHQ_TOKEN', $tok, 'User')
+        $env:FINHQ_TOKEN = $tok
+        Write-Host "Saved as user environment variable FINHQ_TOKEN."
+        Write-Host "(Remove it later with:  setx FINHQ_TOKEN """"  then delete it in System > Environment Variables, or run  [Environment]::SetEnvironmentVariable('FINHQ_TOKEN',`$null,'User'))"
     }
     return $tok
 }

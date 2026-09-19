@@ -15,10 +15,15 @@ link, and downloads it.
 1. Get your FinHQ personal token (starts with `fhq_`) from the FinHQ app's
    MCP / Connect settings.
 2. Run the tool. On first run it prompts for the token (hidden) and offers to
-   save it to `%USERPROFILE%\.finhq_token` so you're not asked again.
+   save it as a per-user Windows environment variable (`FINHQ_TOKEN`) so you're
+   not asked again. It's stored in your Windows user profile (the registry under
+   `HKCU\Environment`), not in any file in this folder.
 3. Requirements: Windows PowerShell 5.1 (built into Windows 10/11). Nothing to install.
 
 ## Security
 The token is a live credential to your FinHQ account. It is never stored in the
-repo — only in the env var or `%USERPROFILE%\.finhq_token`. `.gitignore` keeps
-`.env`, `.finhq_token`, and downloaded `.xlsx` files out of git.
+repo or in a `.env` file — only as the `FINHQ_TOKEN` environment variable on your
+machine. To remove it later, clear `FINHQ_TOKEN` in Windows *System > Environment
+Variables* (or run `[Environment]::SetEnvironmentVariable('FINHQ_TOKEN',$null,'User')`
+in PowerShell). `.gitignore` keeps stray `.env` files and downloaded `.xlsx` files
+out of git.
